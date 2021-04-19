@@ -1,0 +1,15 @@
+java_library {
+    name: "okio-lib",
+    srcs: [
+        "okio/src/jvmMain/**/*.kt",
+        "okio/src/commonMain/**/*.kt",
+    ],
+    static_libs: [
+        "guava-android-annotation-stubs",
+    ],
+    kotlincflags: [
+        "-Xmulti-platform",
+    ],
+    sdk_version: "current",
+    java_version: "1.7",
+}
