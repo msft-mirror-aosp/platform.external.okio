@@ -33,5 +33,4 @@ java_library {
     ],
     sdk_version: "current",
     min_sdk_version: "30",
-    java_version: "1.7",
 }
