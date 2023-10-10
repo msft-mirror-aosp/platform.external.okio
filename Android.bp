@@ -25,7 +25,9 @@ java_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.adservices",
+        "com.android.devicelock",
         "com.android.extservices",
+        "com.android.permission",
     ],
     static_libs: [
         "guava-android-annotation-stubs",
@@ -34,4 +36,5 @@ java_library {
         "-Xmulti-platform",
     ],
     sdk_version: "core_current",
+    min_sdk_version: "30",
 }
