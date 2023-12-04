@@ -17,13 +17,16 @@ license {
 
 java_library {
     name: "okio-lib",
+    host_supported: true,
     srcs: [
         "okio/src/jvmMain/**/*.kt",
         "okio/src/commonMain/**/*.kt",
     ],
     apex_available: [
         "//apex_available:platform",
+        "com.android.adservices",
         "com.android.devicelock",
+        "com.android.extservices",
         "com.android.permission",
     ],
     static_libs: [
