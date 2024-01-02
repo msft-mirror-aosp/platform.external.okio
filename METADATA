@@ -14,7 +14,7 @@ third_party {
     type: GIT
     value: "https://github.com/square/okio/"
   }
-  version: "47fb0ddcd0bcf768a897dff723a1699341eea10f"
-  last_upgrade_date { year: 2021 month: 4 day: 6 }
+  version: "08af0faf025606573de5ea048d55cb857ca8f085"
+  last_upgrade_date { year: 2024 month: 1 day: 2 }
   license_type: NOTICE
 }
