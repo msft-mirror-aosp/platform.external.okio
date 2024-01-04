@@ -81,6 +81,8 @@ kotlin {
         implementation deps.kotlin.test.common
         implementation deps.kotlin.test.annotations
         implementation deps.kotlin.time
+
+        implementation project(":okio-fakefilesystem")
       }
     }
     nonJvmMain {
