@@ -46,7 +46,7 @@ expect class Buffer() : BufferedSource, BufferedSink {
   fun copyTo(
     out: Buffer,
     offset: Long = 0L,
-    byteCount: Long
+    byteCount: Long,
   ): Buffer
 
   /**
@@ -55,7 +55,7 @@ expect class Buffer() : BufferedSource, BufferedSink {
    */
   fun copyTo(
     out: Buffer,
-    offset: Long = 0L
+    offset: Long = 0L,
   ): Buffer
 
   /**
@@ -133,7 +133,10 @@ expect class Buffer() : BufferedSource, BufferedSink {
 
   override fun writeHexadecimalUnsignedLong(v: Long): Buffer
 
-  /** Returns a deep copy of this buffer.  */
+  /**
+   * Returns a deep copy of this buffer. The returned [Buffer] initially shares the underlying
+   * [ByteArray]s. See [UnsafeCursor] for more details.
+   */
   fun copy(): Buffer
 
   /** Returns an immutable copy of this buffer as a byte string.  */
@@ -142,9 +145,9 @@ expect class Buffer() : BufferedSource, BufferedSink {
   /** Returns an immutable copy of the first `byteCount` bytes of this buffer as a byte string. */
   fun snapshot(byteCount: Int): ByteString
 
-  fun readUnsafe(unsafeCursor: UnsafeCursor = UnsafeCursor()): UnsafeCursor
+  fun readUnsafe(unsafeCursor: UnsafeCursor = DEFAULT__new_UnsafeCursor): UnsafeCursor
 
-  fun readAndWriteUnsafe(unsafeCursor: UnsafeCursor = UnsafeCursor()): UnsafeCursor
+  fun readAndWriteUnsafe(unsafeCursor: UnsafeCursor = DEFAULT__new_UnsafeCursor): UnsafeCursor
 
   /**
    * A handle to the underlying data in a buffer. This handle is unsafe because it does not enforce
@@ -240,7 +243,7 @@ expect class Buffer() : BufferedSource, BufferedSink {
    * // start = 0     end = 3
    * ```
    *
-   * There is an optimization in `Buffer.clone()` and other methods that allows two segments to
+   * There is an optimization in `Buffer.copy()` and other methods that allows two segments to
    * share the same underlying byte array. Clones can't write to the shared byte array; instead they
    * allocate a new (private) segment early.
    *
@@ -253,7 +256,7 @@ expect class Buffer() : BufferedSource, BufferedSink {
    * //              ^                                  ^
    * //           start = 2                         end = 5000
    *
-   * nana2 = nana.clone()
+   * nana2 = nana.copy()
    * nana2.writeUtf8("batman")
    *
    * // [ 'n', 'a', 'n', 'a', ..., 'n', 'a', 'n', 'a', '?', '?', '?', ...]
@@ -337,14 +340,19 @@ expect class Buffer() : BufferedSource, BufferedSink {
    * You can reuse instances of this class if you like. Use the overloads of [Buffer.readUnsafe] and
    * [Buffer.readAndWriteUnsafe] that take a cursor and close it after use.
    */
-  class UnsafeCursor constructor() {
+  class UnsafeCursor constructor() : Closeable {
     @JvmField var buffer: Buffer?
+
     @JvmField var readWrite: Boolean
 
     internal var segment: Segment?
+
     @JvmField var offset: Long
+
     @JvmField var data: ByteArray?
+
     @JvmField var start: Int
+
     @JvmField var end: Int
 
     /**
@@ -403,6 +411,6 @@ expect class Buffer() : BufferedSource, BufferedSink {
      */
     fun expandBuffer(minByteCount: Int): Long
 
-    fun close()
+    override fun close()
   }
 }
