@@ -19,30 +19,29 @@ import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.get
 import okio.Path.Companion.toPath
 import okio.internal.toPath
-import platform.posix.DIR
-import platform.posix.FILE
+import platform.posix.EEXIST
 import platform.posix.closedir
 import platform.posix.dirent
 import platform.posix.errno
-import platform.posix.fopen
 import platform.posix.opendir
 import platform.posix.readdir
 import platform.posix.set_posix_errno
 
-@ExperimentalFileSystem
 internal object PosixFileSystem : FileSystem() {
   private val SELF_DIRECTORY_ENTRY = ".".toPath()
   private val PARENT_DIRECTORY_ENTRY = "..".toPath()
 
   override fun canonicalize(path: Path) = variantCanonicalize(path)
 
-  override fun metadataOrNull(path: Path): FileMetadata? {
-    return variantMetadataOrNull(path)
-  }
+  override fun metadataOrNull(path: Path) = variantMetadataOrNull(path)
 
-  override fun list(dir: Path): List<Path> {
-    val opendir: CPointer<DIR> = opendir(dir.toString())
-      ?: throw errnoToIOException(errno)
+  override fun list(dir: Path): List<Path> = list(dir, throwOnFailure = true)!!
+
+  override fun listOrNull(dir: Path): List<Path>? = list(dir, throwOnFailure = false)
+
+  private fun list(dir: Path, throwOnFailure: Boolean): List<Path>? {
+    val opendir = opendir(dir.toString())
+      ?: if (throwOnFailure) throw errnoToIOException(errno) else return null
 
     try {
       val result = mutableListOf<Path>()
@@ -52,8 +51,8 @@ internal object PosixFileSystem : FileSystem() {
       while (true) {
         val dirent: CPointer<dirent> = readdir(opendir) ?: break
         val childPath = buffer.writeNullTerminated(
-          bytes = dirent[0].d_name
-        ).toPath()
+          bytes = dirent[0].d_name,
+        ).toPath(normalize = true)
 
         if (childPath == SELF_DIRECTORY_ENTRY || childPath == PARENT_DIRECTORY_ENTRY) {
           continue // exclude '.' and '..' from the results.
@@ -62,7 +61,13 @@ internal object PosixFileSystem : FileSystem() {
         result += dir / childPath
       }
 
-      if (errno != 0) throw errnoToIOException(errno)
+      if (errno != 0) {
+        if (throwOnFailure) {
+          throw errnoToIOException(errno)
+        } else {
+          return null
+        }
+      }
 
       result.sort()
       return result
@@ -71,41 +76,44 @@ internal object PosixFileSystem : FileSystem() {
     }
   }
 
-  override fun source(file: Path): Source {
-    val openFile: CPointer<FILE> = fopen(file.toString(), "r")
-      ?: throw errnoToIOException(errno)
-    return FileSource(openFile)
+  override fun openReadOnly(file: Path) = variantOpenReadOnly(file)
+
+  override fun openReadWrite(file: Path, mustCreate: Boolean, mustExist: Boolean): FileHandle {
+    return variantOpenReadWrite(file, mustCreate = mustCreate, mustExist = mustExist)
   }
 
-  override fun sink(file: Path): Sink {
-    val openFile: CPointer<FILE> = fopen(file.toString(), "w")
-      ?: throw errnoToIOException(errno)
-    return FileSink(openFile)
-  }
+  override fun source(file: Path) = variantSource(file)
 
-  override fun appendingSink(file: Path): Sink {
-    val openFile: CPointer<FILE> = fopen(file.toString(), "a")
-      ?: throw errnoToIOException(errno)
-    return FileSink(openFile)
-  }
+  override fun sink(file: Path, mustCreate: Boolean) = variantSink(file, mustCreate)
 
-  override fun createDirectory(dir: Path) {
+  override fun appendingSink(file: Path, mustExist: Boolean) = variantAppendingSink(file, mustExist)
+
+  override fun createDirectory(dir: Path, mustCreate: Boolean) {
     val result = variantMkdir(dir)
     if (result != 0) {
+      if (errno == EEXIST) {
+        if (mustCreate) {
+          errnoToIOException(errno)
+        } else {
+          return
+        }
+      }
       throw errnoToIOException(errno)
     }
   }
 
   override fun atomicMove(
     source: Path,
-    target: Path
+    target: Path,
   ) {
     variantMove(source, target)
   }
 
-  override fun delete(path: Path) {
-    variantDelete(path)
+  override fun delete(path: Path, mustExist: Boolean) {
+    variantDelete(path, mustExist)
   }
+
+  override fun createSymlink(source: Path, target: Path) = variantCreateSymlink(source, target)
 
   override fun toString() = "PosixSystemFileSystem"
 }
