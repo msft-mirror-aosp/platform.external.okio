@@ -20,12 +20,12 @@ import java.io.InputStream
 import java.nio.channels.ReadableByteChannel
 import java.nio.charset.Charset
 
-actual interface BufferedSource : Source, ReadableByteChannel {
+actual sealed interface BufferedSource : Source, ReadableByteChannel {
   /** Returns this source's internal buffer. */
   @Deprecated(
     message = "moved to val: use getBuffer() instead",
     replaceWith = ReplaceWith(expression = "buffer"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
   )
   fun buffer(): Buffer
 
