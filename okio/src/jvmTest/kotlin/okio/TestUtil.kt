@@ -15,16 +15,17 @@
  */
 package okio
 
-import okio.ByteString.Companion.encodeUtf8
-import org.junit.Assume
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
+import java.util.Locale
 import java.util.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import okio.ByteString.Companion.encodeUtf8
+import org.junit.Assume
 
 object TestUtil {
   // Necessary to make an internal member visible to Java.
@@ -175,10 +176,10 @@ object TestUtil {
   }
 
   /** Serializes original to bytes, then deserializes those bytes and returns the result.  */
+  // Assume serialization doesn't change types.
   @Suppress("UNCHECKED_CAST")
   @Throws(Exception::class)
   @JvmStatic
-  // Assume serialization doesn't change types.
   fun <T : Serializable> reserialize(original: T): T {
     val buffer = Buffer()
     val out = ObjectOutputStream(buffer.outputStream())
@@ -298,5 +299,5 @@ object TestUtil {
     return reversed.toShort()
   }
 
-  fun assumeNotWindows() = Assume.assumeFalse(System.getProperty("os.name").toLowerCase().contains("win"))
+  fun assumeNotWindows() = Assume.assumeFalse(System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win"))
 }
