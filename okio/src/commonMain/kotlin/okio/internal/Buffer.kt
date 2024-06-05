@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:JvmName("-Buffer") // A leading '-' hides this class from Java.
 
 // TODO move to Buffer class: https://youtrack.jetbrains.com/issue/KT-20427
 @file:Suppress("NOTHING_TO_INLINE")
 
 package okio.internal
 
+import kotlin.jvm.JvmName
+import kotlin.native.concurrent.SharedImmutable
 import okio.ArrayIndexOutOfBoundsException
 import okio.Buffer
 import okio.Buffer.UnsafeCursor
@@ -35,8 +38,10 @@ import okio.and
 import okio.asUtf8ToByteArray
 import okio.checkOffsetAndCount
 import okio.minOf
+import okio.resolveDefaultParameter
 import okio.toHexString
 
+@SharedImmutable
 internal val HEX_DIGIT_BYTES = "0123456789abcdef".asUtf8ToByteArray()
 
 // Threshold determined empirically via ReadByteStringBenchmark
@@ -52,7 +57,7 @@ internal fun rangeEquals(
   segmentPos: Int,
   bytes: ByteArray,
   bytesOffset: Int,
-  bytesLimit: Int
+  bytesLimit: Int,
 ): Boolean {
   var segment = segment
   var segmentPos = segmentPos
@@ -81,7 +86,7 @@ internal fun rangeEquals(
 
 internal fun Buffer.readUtf8Line(newline: Long): String {
   return when {
-    newline > 0 && this[newline - 1] == '\r'.toByte() -> {
+    newline > 0 && this[newline - 1] == '\r'.code.toByte() -> {
       // Read everything until '\r\n', then skip the '\r\n'.
       val result = readUtf8(newline - 1L)
       skip(2L)
@@ -102,7 +107,7 @@ internal fun Buffer.readUtf8Line(newline: Long): String {
  */
 internal inline fun <T> Buffer.seek(
   fromIndex: Long,
-  lambda: (Segment?, Long) -> T
+  lambda: (Segment?, Long) -> T,
 ): T {
   var s: Segment = head ?: return lambda(null, -1L)
 
@@ -234,7 +239,7 @@ internal fun Buffer.selectPrefix(options: Options, selectTruncated: Boolean = fa
 internal inline fun Buffer.commonCopyTo(
   out: Buffer,
   offset: Long,
-  byteCount: Long
+  byteCount: Long,
 ): Buffer {
   var offset = offset
   var byteCount = byteCount
@@ -434,7 +439,7 @@ internal inline fun Buffer.commonSkip(byteCount: Long) {
 internal inline fun Buffer.commonWrite(
   byteString: ByteString,
   offset: Int = 0,
-  byteCount: Int = byteString.size
+  byteCount: Int = byteString.size,
 ): Buffer {
   byteString.write(this, offset, byteCount)
   return this
@@ -444,7 +449,7 @@ internal inline fun Buffer.commonWriteDecimalLong(v: Long): Buffer {
   var v = v
   if (v == 0L) {
     // Both a shortcut and required since the following code can't handle zero.
-    return writeByte('0'.toInt())
+    return writeByte('0'.code)
   }
 
   var negative = false
@@ -458,33 +463,61 @@ internal inline fun Buffer.commonWriteDecimalLong(v: Long): Buffer {
 
   // Binary search for character width which favors matching lower numbers.
   var width =
-    if (v < 100000000L)
-      if (v < 10000L)
-        if (v < 100L)
-          if (v < 10L) 1
-          else 2
-        else if (v < 1000L) 3
-        else 4
-      else if (v < 1000000L)
-        if (v < 100000L) 5
-        else 6
-      else if (v < 10000000L) 7
-      else 8
-    else if (v < 1000000000000L)
-      if (v < 10000000000L)
-        if (v < 1000000000L) 9
-        else 10
-      else if (v < 100000000000L) 11
-      else 12
-    else if (v < 1000000000000000L)
-      if (v < 10000000000000L) 13
-      else if (v < 100000000000000L) 14
-      else 15
-    else if (v < 100000000000000000L)
-      if (v < 10000000000000000L) 16
-      else 17
-    else if (v < 1000000000000000000L) 18
-    else 19
+    if (v < 100000000L) {
+      if (v < 10000L) {
+        if (v < 100L) {
+          if (v < 10L) {
+            1
+          } else {
+            2
+          }
+        } else if (v < 1000L) {
+          3
+        } else {
+          4
+        }
+      } else if (v < 1000000L) {
+        if (v < 100000L) {
+          5
+        } else {
+          6
+        }
+      } else if (v < 10000000L) {
+        7
+      } else {
+        8
+      }
+    } else if (v < 1000000000000L) {
+      if (v < 10000000000L) {
+        if (v < 1000000000L) {
+          9
+        } else {
+          10
+        }
+      } else if (v < 100000000000L) {
+        11
+      } else {
+        12
+      }
+    } else if (v < 1000000000000000L) {
+      if (v < 10000000000000L) {
+        13
+      } else if (v < 100000000000000L) {
+        14
+      } else {
+        15
+      }
+    } else if (v < 100000000000000000L) {
+      if (v < 10000000000000000L) {
+        16
+      } else {
+        17
+      }
+    } else if (v < 1000000000000000000L) {
+      18
+    } else {
+      19
+    }
   if (negative) {
     ++width
   }
@@ -498,7 +531,7 @@ internal inline fun Buffer.commonWriteDecimalLong(v: Long): Buffer {
     v /= 10
   }
   if (negative) {
-    data[--pos] = '-'.toByte()
+    data[--pos] = '-'.code.toByte()
   }
 
   tail.limit += width
@@ -510,7 +543,7 @@ internal inline fun Buffer.commonWriteHexadecimalUnsignedLong(v: Long): Buffer {
   var v = v
   if (v == 0L) {
     // Both a shortcut and required since the following code can't handle zero.
-    return writeByte('0'.toInt())
+    return writeByte('0'.code)
   }
 
   // Mask every bit below the most significant bit to a 1
@@ -572,7 +605,7 @@ internal inline fun Buffer.commonWrite(source: ByteArray) = write(source, 0, sou
 internal inline fun Buffer.commonWrite(
   source: ByteArray,
   offset: Int,
-  byteCount: Int
+  byteCount: Int,
 ): Buffer {
   var offset = offset
   checkOffsetAndCount(source.size.toLong(), offset.toLong(), byteCount.toLong())
@@ -586,7 +619,7 @@ internal inline fun Buffer.commonWrite(
       destination = tail.data,
       destinationOffset = tail.limit,
       startIndex = offset,
-      endIndex = offset + toCopy
+      endIndex = offset + toCopy,
     )
 
     offset += toCopy
@@ -625,7 +658,10 @@ internal inline fun Buffer.commonRead(sink: ByteArray, offset: Int, byteCount: I
   val s = head ?: return -1
   val toCopy = minOf(byteCount, s.limit - s.pos)
   s.data.copyInto(
-    destination = sink, destinationOffset = offset, startIndex = s.pos, endIndex = s.pos + toCopy
+    destination = sink,
+    destinationOffset = offset,
+    startIndex = s.pos,
+    endIndex = s.pos + toCopy,
   )
 
   s.pos += toCopy
@@ -662,8 +698,8 @@ internal inline fun Buffer.commonReadDecimalLong(): Long {
 
     while (pos < limit) {
       val b = data[pos]
-      if (b >= '0'.toByte() && b <= '9'.toByte()) {
-        val digit = '0'.toByte() - b
+      if (b >= '0'.code.toByte() && b <= '9'.code.toByte()) {
+        val digit = '0'.code.toByte() - b
 
         // Detect when the digit would cause an overflow.
         if (value < OVERFLOW_ZONE || value == OVERFLOW_ZONE && digit < overflowDigit) {
@@ -673,15 +709,10 @@ internal inline fun Buffer.commonReadDecimalLong(): Long {
         }
         value *= 10L
         value += digit.toLong()
-      } else if (b == '-'.toByte() && seen == 0) {
+      } else if (b == '-'.code.toByte() && seen == 0) {
         negative = true
         overflowDigit -= 1
       } else {
-        if (seen == 0) {
-          throw NumberFormatException(
-            "Expected leading [0-9] or '-' character but was 0x${b.toHexString()}"
-          )
-        }
         // Set a flag to stop iteration. We still need to run through segment updating below.
         done = true
         break
@@ -699,6 +730,14 @@ internal inline fun Buffer.commonReadDecimalLong(): Long {
   } while (!done && head != null)
 
   size -= seen.toLong()
+
+  val minimumSeen = if (negative) 2 else 1
+  if (seen < minimumSeen) {
+    if (size == 0L) throw EOFException()
+    val expected = if (negative) "Expected a digit" else "Expected a digit or '-'"
+    throw NumberFormatException("$expected but was 0x${get(0).toHexString()}")
+  }
+
   return if (negative) value else -value
 }
 
@@ -720,16 +759,16 @@ internal inline fun Buffer.commonReadHexadecimalUnsignedLong(): Long {
       val digit: Int
 
       val b = data[pos]
-      if (b >= '0'.toByte() && b <= '9'.toByte()) {
-        digit = b - '0'.toByte()
-      } else if (b >= 'a'.toByte() && b <= 'f'.toByte()) {
-        digit = b - 'a'.toByte() + 10
-      } else if (b >= 'A'.toByte() && b <= 'F'.toByte()) {
-        digit = b - 'A'.toByte() + 10 // We never write uppercase, but we support reading it.
+      if (b >= '0'.code.toByte() && b <= '9'.code.toByte()) {
+        digit = b - '0'.code.toByte()
+      } else if (b >= 'a'.code.toByte() && b <= 'f'.code.toByte()) {
+        digit = b - 'a'.code.toByte() + 10
+      } else if (b >= 'A'.code.toByte() && b <= 'F'.code.toByte()) {
+        digit = b - 'A'.code.toByte() + 10 // We never write uppercase, but we support reading it.
       } else {
         if (seen == 0) {
           throw NumberFormatException(
-            "Expected leading [0-9a-fA-F] character but was 0x${b.toHexString()}"
+            "Expected leading [0-9a-fA-F] character but was 0x${b.toHexString()}",
           )
         }
         // Set a flag to stop iteration. We still need to run through segment updating below.
@@ -825,7 +864,7 @@ internal inline fun Buffer.commonReadUtf8(byteCount: Long): String {
 }
 
 internal inline fun Buffer.commonReadUtf8Line(): String? {
-  val newline = indexOf('\n'.toByte())
+  val newline = indexOf('\n'.code.toByte())
 
   return when {
     newline != -1L -> readUtf8Line(newline)
@@ -837,11 +876,11 @@ internal inline fun Buffer.commonReadUtf8Line(): String? {
 internal inline fun Buffer.commonReadUtf8LineStrict(limit: Long): String {
   require(limit >= 0L) { "limit < 0: $limit" }
   val scanLength = if (limit == Long.MAX_VALUE) Long.MAX_VALUE else limit + 1L
-  val newline = indexOf('\n'.toByte(), 0L, scanLength)
+  val newline = indexOf('\n'.code.toByte(), 0L, scanLength)
   if (newline != -1L) return readUtf8Line(newline)
   if (scanLength < size &&
-    this[scanLength - 1] == '\r'.toByte() &&
-    this[scanLength] == '\n'.toByte()
+    this[scanLength - 1] == '\r'.code.toByte() &&
+    this[scanLength] == '\n'.code.toByte()
   ) {
     return readUtf8Line(scanLength) // The line was 'limit' UTF-8 bytes followed by \r\n.
   }
@@ -850,8 +889,8 @@ internal inline fun Buffer.commonReadUtf8LineStrict(limit: Long): String {
   throw EOFException(
     "\\n not found: limit=${minOf(
       size,
-      limit
-    )} content=${data.readByteString().hex()}${'…'}"
+      limit,
+    )} content=${data.readByteString().hex()}${'…'}",
   )
 }
 
@@ -938,7 +977,7 @@ internal inline fun Buffer.commonWriteUtf8(string: String, beginIndex: Int, endI
   // Transcode a UTF-16 Java String to UTF-8 bytes.
   var i = beginIndex
   while (i < endIndex) {
-    var c = string[i].toInt()
+    var c = string[i].code
 
     when {
       c < 0x80 -> {
@@ -953,7 +992,7 @@ internal inline fun Buffer.commonWriteUtf8(string: String, beginIndex: Int, endI
         // Fast-path contiguous runs of ASCII characters. This is ugly, but yields a ~4x performance
         // improvement over independent calls to writeByte().
         while (i < runLimit) {
-          c = string[i].toInt()
+          c = string[i].code
           if (c >= 0x80) break
           data[segmentOffset + i++] = c.toByte() // 0xxxxxxx
         }
@@ -992,9 +1031,9 @@ internal inline fun Buffer.commonWriteUtf8(string: String, beginIndex: Int, endI
         // c is a surrogate. Make sure it is a high surrogate & that its successor is a low
         // surrogate. If not, the UTF-16 is invalid, in which case we emit a replacement
         // character.
-        val low = (if (i + 1 < endIndex) string[i + 1].toInt() else 0)
+        val low = (if (i + 1 < endIndex) string[i + 1].code else 0)
         if (c > 0xdbff || low !in 0xdc00..0xdfff) {
-          writeByte('?'.toInt())
+          writeByte('?'.code)
           i++
         } else {
           // UTF-16 high surrogate: 110110xxxxxxxxxx (10 bits)
@@ -1039,7 +1078,7 @@ internal inline fun Buffer.commonWriteUtf8CodePoint(codePoint: Int): Buffer {
     }
     codePoint in 0xd800..0xdfff -> {
       // Emit a replacement character for a partial surrogate.
-      writeByte('?'.toInt())
+      writeByte('?'.code)
     }
     codePoint < 0x10000 -> {
       // Emit a 16-bit code point with 3 bytes.
@@ -1373,7 +1412,7 @@ internal inline fun Buffer.commonRangeEquals(
   offset: Long,
   bytes: ByteString,
   bytesOffset: Int,
-  byteCount: Int
+  byteCount: Int,
 ): Boolean {
   if (offset < 0L ||
     bytesOffset < 0 ||
@@ -1507,6 +1546,7 @@ internal inline fun Buffer.commonSnapshot(byteCount: Int): ByteString {
 }
 
 internal fun Buffer.commonReadUnsafe(unsafeCursor: UnsafeCursor): UnsafeCursor {
+  val unsafeCursor = resolveDefaultParameter(unsafeCursor)
   check(unsafeCursor.buffer == null) { "already attached to a buffer" }
 
   unsafeCursor.buffer = this
@@ -1515,6 +1555,7 @@ internal fun Buffer.commonReadUnsafe(unsafeCursor: UnsafeCursor): UnsafeCursor {
 }
 
 internal fun Buffer.commonReadAndWriteUnsafe(unsafeCursor: UnsafeCursor): UnsafeCursor {
+  val unsafeCursor = resolveDefaultParameter(unsafeCursor)
   check(unsafeCursor.buffer == null) { "already attached to a buffer" }
 
   unsafeCursor.buffer = this

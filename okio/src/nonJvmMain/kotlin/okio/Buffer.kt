@@ -93,12 +93,12 @@ actual class Buffer : BufferedSource, BufferedSink {
   actual fun copyTo(
     out: Buffer,
     offset: Long,
-    byteCount: Long
+    byteCount: Long,
   ): Buffer = commonCopyTo(out, offset, byteCount)
 
   actual fun copyTo(
     out: Buffer,
-    offset: Long
+    offset: Long,
   ): Buffer = copyTo(out, offset, size - offset)
 
   actual operator fun get(pos: Long): Byte = commonGet(pos)
@@ -232,7 +232,7 @@ actual class Buffer : BufferedSource, BufferedSink {
     offset: Long,
     bytes: ByteString,
     bytesOffset: Int,
-    byteCount: Int
+    byteCount: Int,
   ): Boolean = commonRangeEquals(offset, bytes, bytesOffset, byteCount)
 
   override fun flush() = Unit
@@ -297,7 +297,7 @@ actual class Buffer : BufferedSource, BufferedSink {
   actual fun readAndWriteUnsafe(unsafeCursor: UnsafeCursor): UnsafeCursor =
     commonReadAndWriteUnsafe(unsafeCursor)
 
-  actual class UnsafeCursor {
+  actual class UnsafeCursor : Closeable {
     actual var buffer: Buffer? = null
     actual var readWrite: Boolean = false
 
@@ -315,7 +315,7 @@ actual class Buffer : BufferedSource, BufferedSink {
 
     actual fun expandBuffer(minByteCount: Int): Long = commonExpandBuffer(minByteCount)
 
-    actual fun close() {
+    actual override fun close() {
       commonClose()
     }
   }
