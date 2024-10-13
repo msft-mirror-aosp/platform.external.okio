@@ -30,6 +30,7 @@ java_library {
         "com.android.devicelock",
         "com.android.extservices",
         "com.android.permission",
+        "com.android.virt",
     ],
     static_libs: [
         "guava-android-annotation-stubs",
