@@ -23,6 +23,8 @@ java_library {
     ],
     common_srcs: [
         "okio/src/commonMain/**/*.kt",
+        "okio/src/zlibMain/**/*.kt",
+        "okio/src/systemFileSystemMain/**/*.kt",
     ],
     apex_available: [
         "//apex_available:platform",
@@ -37,6 +39,7 @@ java_library {
     ],
     kotlincflags: [
         "-Xmulti-platform",
+        "-Xexpect-actual-classes",
     ],
     sdk_version: "core_current",
     min_sdk_version: "30",
