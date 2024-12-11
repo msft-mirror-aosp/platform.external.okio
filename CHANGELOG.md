@@ -1,6 +1,41 @@
 Change Log
 ==========
 
+## Version 3.9.1
+
+_2024-09-12_
+
+ * Fix: Support paths containing a single dot (".") in `Path.relativeTo`.
+ * Fix: Do not read from the upstream source when a 0-byte read is requested.
+ * Fix: Update kotlinx.datetime to 0.6.0 to correct a Gradle module metadata problem with 0.5.0.
+   Note: this artifact is only used in 'okio-fakefilesystem' and 'okio-nodefilesystem' and not in the Okio core.
+
+
+## Version 3.9.0
+
+_2024-03-12_
+
+ * New: `FileSystem.SYSTEM` can be used in source sets that target both Kotlin/Native and
+   Kotlin/JVM. Previously, we had this symbol in each source set but it wasn't available to
+   common source sets.
+ * New: `COpaquePointer.readByteString(...)` creates a ByteString from a memory address.
+ * New: Support `InflaterSource`, `DeflaterSink`, `GzipSink`, and `GzipSource` in Kotlin/Native.
+ * New: Support openZip() on Kotlin/Native. One known bug in this implementation is that
+   `FileMetadata.lastModifiedAtMillis()` is interpreted as UTC and not the host machine's time zone.
+ * New: Prefer NTFS timestamps in ZIP file systems' metadata. This avoids the time zone problems
+   of ZIP's built-in DOS timestamps, and the 2038 time bombs of ZIP's extended timestamps.
+ * Fix: Don't leak file handles to opened JAR files open in `FileSystem.RESOURCES`.
+ * Fix: Don't throw a `NullPointerException` if `Closeable.use { ... }` returns null.
+
+
+## Version 3.8.0
+
+_2024-02-09_
+
+ * New: `TypedOptions` works like `Options`, but it returns a `T` rather than an index.
+ * Fix: Don't leave sinks open when there's a race in `Pipe.fold()`.
+
+
 ## Version 3.7.0
 
 _2023-12-16_
