@@ -23,6 +23,8 @@ java_library {
     ],
     common_srcs: [
         "okio/src/commonMain/**/*.kt",
+        "okio/src/zlibMain/**/*.kt",
+        "okio/src/systemFileSystemMain/**/*.kt",
     ],
     apex_available: [
         "//apex_available:platform",
@@ -30,12 +32,14 @@ java_library {
         "com.android.devicelock",
         "com.android.extservices",
         "com.android.permission",
+        "com.android.virt",
     ],
     static_libs: [
         "guava-android-annotation-stubs",
     ],
     kotlincflags: [
         "-Xmulti-platform",
+        "-Xexpect-actual-classes",
     ],
     sdk_version: "core_current",
     min_sdk_version: "30",
