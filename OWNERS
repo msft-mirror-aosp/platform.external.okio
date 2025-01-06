@@ -1,3 +1,4 @@
 file:platform/external/lottie:OWNERS
 kirit@google.com
 olegsh@google.com
+include platform/system/core:/janitors/OWNERS #{LAST_RESORT_SUGGESTION}
