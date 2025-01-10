@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Square, Inc.
+ * Copyright (C) 2024 Square, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package okio
 
-enum class BufferedSinkFactory {
-  BasicBuffer {
-    override fun create(data: Buffer): BufferedSink {
-      return data
-    }
-  },
-
-  SinkBuffer {
-    override fun create(data: Buffer): BufferedSink {
-      return (data as Sink).buffer()
-    }
-  },
-  ;
-
-  abstract fun create(data: Buffer): BufferedSink
+enum class CloseBehavior {
+  Closes,
+  DoesNothing,
+  Unsupported,
 }
