@@ -31,6 +31,7 @@ java_library {
         "com.android.adservices",
         "com.android.devicelock",
         "com.android.extservices",
+        "com.android.mediaprovider",
         "com.android.ondevicepersonalization",
         "com.android.permission",
         "com.android.virt",
