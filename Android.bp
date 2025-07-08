@@ -29,6 +29,7 @@ java_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.adservices",
+        "com.android.bt",
         "com.android.devicelock",
         "com.android.extservices",
         "com.android.ondevicepersonalization",
