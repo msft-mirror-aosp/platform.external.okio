@@ -18,7 +18,7 @@ third_party {
   identifier {
     type: "Git"
     value: "https://github.com/square/okio/"
-    version: "c8784ddfddccdfb6c0670f09d9550a7638283559"
+    version: "e0dcfb6462e642a672ed82840b2530aa385636a9"
     closest_version: "3.10.2"
   }
 }
